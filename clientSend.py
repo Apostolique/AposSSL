@@ -68,10 +68,6 @@ def sendPacket():
         yellow = True
     packet.commands.isteamyellow = yellow
     packet.commands.timestamp = 0.0
-    #command = grSim_Robot_Command()
-    #print ("Special")
-    #print(dir(packet.commands.robot_commands))
-    #print ("Not Special")
     command = packet.commands.robot_commands.add()
     command.id = int(edtId.text()) if edtId.text() else 0
 
@@ -88,13 +84,6 @@ def sendPacket():
     command.kickspeedz = float(edtChip.text()) if edtChip.text() else 0
     command.spinner = (chkSpin.isChecked())
 
-    #dgram = QByteArray()
-    #dgram.resize(packet.ByteSize())
-
-    print(dir(packet))
-
-    #packet.ParseFromString(dgram.data())
-    #udpsocket.sendto(dgram, (_addr, _port));
     udpsocket.sendto(packet.SerializeToString(), (_addr, _port))
 
 a = QApplication(sys.argv)
