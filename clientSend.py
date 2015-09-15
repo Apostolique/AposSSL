@@ -5,8 +5,8 @@ from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 from PyQt4.QtNetwork import *
 
-from grSim_Packet_pb2 import grSim_Packet
-from grSim_Commands_pb2 import grSim_Commands, grSim_Robot_Command
+from proto.grSim_Packet_pb2 import grSim_Packet
+from proto.grSim_Commands_pb2 import grSim_Commands, grSim_Robot_Command
 
 #This can act as a template for later.
 
