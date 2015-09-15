@@ -19,7 +19,29 @@ wp = wrapper.SSL_WrapperPacket()
 while True:
   wp.ParseFromString(sock.recv(65536))
   if wp.detection.IsInitialized():
-    print (wp.detection)
+    print ("Frame number:", wp.detection.frame_number)
+    print ("Time Capture:", wp.detection.t_capture)
+    print ("Time Sent:", wp.detection.t_sent)
+    print ("Camera ID:", wp.detection.camera_id)
+    for i in wp.detection.balls:
+      print ("Ball")
+      print ("\tConfidence:", i.confidence)
+      print ("\tx:", i.x)
+      print ("\ty:", i.y)
+      print ("\tz:", i.z)
+    for i in wp.detection.robots_yellow:
+      print ("Robot Yellow", i.robot_id)
+      print ("\tConfidence:", i.confidence)
+      print ("\tx:", i.x)
+      print ("\ty:", i.y)
+      print ("\tOrientation:", i.orientation)
+    for i in wp.detection.robots_blue:
+      print ("Robot Blue", i.robot_id)
+      print ("\tConfidence:", i.confidence)
+      print ("\tx:", i.x)
+      print ("\ty:", i.y)
+      print ("\tOrientation:", i.orientation)
+    #print (wp.detection)
     pass
   if wp.geometry.IsInitialized():
     print (wp.geometry)
