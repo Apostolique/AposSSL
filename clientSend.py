@@ -9,6 +9,10 @@ from proto.grSim_Packet_pb2 import grSim_Packet
 from proto.grSim_Commands_pb2 import grSim_Commands, grSim_Robot_Command
 
 #This can act as a template for later.
+#TODO: Merge the code from clientRecv.py into this file.
+#      Using the data received, maintain a memory representation of the game state.
+#      The memory representation can then be used to control the robots and get
+#      some feedback.
 
 udpsocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 _addr = ""
