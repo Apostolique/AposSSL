@@ -18,7 +18,6 @@ udpsocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 _addr = ""
 _port = 0
 
-
 def disconnectUdp():
     global sending
     global udpsocket
