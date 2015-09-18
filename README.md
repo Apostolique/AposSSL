@@ -15,3 +15,6 @@ Normally, the code is sent to real live robots, but for testing purposes grSim i
 http://www.robocupulaval.com/
 
 This is only my personal repository used for my own fun. The main code for the project is hosted by [RoboCupULaval](https://github.com/RoboCupULaval)
+
+#Twitch
+I'll be streaming my live progress directly on Twitch. http://www.twitch.tv/apostolique
