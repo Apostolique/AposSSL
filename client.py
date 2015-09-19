@@ -226,13 +226,13 @@ class AposAI(threading.Thread):
                 aimAngle = - wc.teams[0][0].orientation - math.pi / 2
                 angle = angle
             elif fakeOri == 7:
-                #You can adjust the factor. Higher means
+                #You can adjust the factor. Lower means
                 #that it will go towards the destination
                 #using a smaller arc
                 aimAngle = - wc.teams[0][0].orientation + 1
                 angle = angle
             elif fakeOri == 8:
-                #You can adjust the factor. Higher means
+                #You can adjust the factor. Lower means
                 #that it will go towards the destination
                 #using a smaller arc
                 aimAngle = - wc.teams[0][0].orientation - 1
