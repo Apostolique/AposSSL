@@ -38,6 +38,27 @@ shoot = False
 fakeOri = 0
 playAll = True
 
+"""
+fakeOri is a state variable. It tells the bot where to
+look and where to go.
+0: Look at the ball, go towards the ball.
+1: Look towards angle (0) and try to position to reach
+   the ball from that angle.
+2: Look towards angle (math.pi + math.pi / 2) and try
+   to reach the ball from that angle.
+3: Look towards angle (math.pi) and try to reach the
+   ball from that angle.
+4: Look towards angle (math.pi / 2) and try to reach
+   the ball from that angle.
+5: Look at the ball and rotate around the ball clockwise.
+6: Look at the ball and rotate around the ball anti-
+   clockwise.
+7: Same as 5.
+8: Same as 6.
+9: Look at one of the goals and go towars the ball.
+10: Press R for 10. Look at the ball. Go backwards.
+"""
+
 def debugP(text):
     #print (text)
     pass #NOPE.JPG
@@ -164,8 +185,8 @@ class AposAI(threading.Thread):
             pass
 
         while playAll:
-            goalX = -3133
-            goalY = -69
+            goalX = -3100
+            goalY = 0
 
             if not shoot:
                 command.kickspeedx = 0
@@ -186,7 +207,7 @@ class AposAI(threading.Thread):
                 angle = angle
             elif fakeOri == 1:
                 aimAngle = angle
-                angle = math.pi * 2
+                angle = 0
             elif fakeOri == 2:
                 aimAngle = angle + math.pi
                 angle = math.pi + math.pi / 2
@@ -197,16 +218,22 @@ class AposAI(threading.Thread):
                 aimAngle = angle + math.pi
                 angle = math.pi / 2
             elif fakeOri == 5:
-                aimAngle = wc.teams[0][0].orientation + math.pi
+                aimAngle = - wc.teams[0][0].orientation + math.pi / 2
                 angle = angle
             elif fakeOri == 6:
-                aimAngle = wc.teams[0][0].orientation + math.pi * 2
+                aimAngle = - wc.teams[0][0].orientation - math.pi / 2
                 angle = angle
             elif fakeOri == 7:
                 aimAngle = - wc.teams[0][0].orientation + math.pi / 2
                 angle = angle
             elif fakeOri == 8:
                 aimAngle = - wc.teams[0][0].orientation - math.pi / 2
+                angle = angle
+            elif fakeOri == 9:
+                aimAngle = - wc.teams[0][0].orientation
+                angle = math.atan2((goalY - pY), (goalX - pX))
+            elif fakeOri == 10:
+                aimAngle = - wc.teams[0][0].orientation
                 angle = angle
 
             bX, bY = rotatePoint(bX, bY, pX, pY, aimAngle)
@@ -227,9 +254,12 @@ class AposAI(threading.Thread):
             #offsetX = bX - (bX - tempD)
             #offsetX = bY - (bY - tempD)
 
-            command.velnormal = 1 / ratioY
-            command.veltangent = 1 / ratioX
-
+            if fakeOri != 10:
+                command.velnormal = 0.1 / ratioY
+                command.veltangent = 0.1 / ratioX
+            else:
+                command.velnormal = -0.1 / ratioY
+                command.veltangent = -0.1 / ratioX
 
             #angle = 0
 
@@ -287,6 +317,10 @@ while txtInput is not "q":
         fakeOri = 7
     elif txtInput is "8":
         fakeOri = 8
+    elif txtInput is "9":
+        fakeOri = 9
+    elif txtInput is "r":
+        fakeOri = 10
 
 playAll = False
 
