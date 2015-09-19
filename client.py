@@ -11,10 +11,6 @@ import proto.messages_robocup_ssl_wrapper_pb2 as wrapper
 from proto.grSim_Packet_pb2 import grSim_Packet
 from proto.grSim_Commands_pb2 import grSim_Commands, grSim_Robot_Command
 
-from PyQt4.QtGui import *
-from PyQt4.QtCore import *
-from PyQt4.QtNetwork import *
-
 #TODO: Using RecvVision, save the data to be used.
 #      Use the data in computeAI.
 
