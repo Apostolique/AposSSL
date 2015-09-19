@@ -53,8 +53,10 @@ look and where to go.
 5: Look at the ball and rotate around the ball clockwise.
 6: Look at the ball and rotate around the ball anti-
    clockwise.
-7: Same as 5.
-8: Same as 6.
+7: Look at the ball and go towards it following a curve
+   clockwise.
+8: Look at the ball and go towards it following a curve
+   anti-clockwise.
 9: Look at one of the goals and go towars the ball.
 10: Press R for 10. Look at the ball. Go backwards.
 """
@@ -224,10 +226,16 @@ class AposAI(threading.Thread):
                 aimAngle = - wc.teams[0][0].orientation - math.pi / 2
                 angle = angle
             elif fakeOri == 7:
-                aimAngle = - wc.teams[0][0].orientation + math.pi / 2
+                #You can adjust the factor. Higher means
+                #that it will go towards the destination
+                #using a smaller arc
+                aimAngle = - wc.teams[0][0].orientation + 1
                 angle = angle
             elif fakeOri == 8:
-                aimAngle = - wc.teams[0][0].orientation - math.pi / 2
+                #You can adjust the factor. Higher means
+                #that it will go towards the destination
+                #using a smaller arc
+                aimAngle = - wc.teams[0][0].orientation - 1
                 angle = angle
             elif fakeOri == 9:
                 aimAngle = - wc.teams[0][0].orientation
@@ -255,11 +263,11 @@ class AposAI(threading.Thread):
             #offsetX = bY - (bY - tempD)
 
             if fakeOri != 10:
-                command.velnormal = 0.1 / ratioY
-                command.veltangent = 0.1 / ratioX
+                command.velnormal = 0.5 / ratioY
+                command.veltangent = 0.5 / ratioX
             else:
-                command.velnormal = -0.1 / ratioY
-                command.veltangent = -0.1 / ratioX
+                command.velnormal = -0.5 / ratioY
+                command.veltangent = -0.5 / ratioX
 
             #angle = 0
 
