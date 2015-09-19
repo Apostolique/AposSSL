@@ -7,7 +7,11 @@ The goal for this project is to create an AI that controls 6 robots in order to 
 
 Watch this video the see some SSL robots in action: https://www.youtube.com/watch?v=aSK1QLKeGs8
 
-You will need to install grSim: https://github.com/mani-monaj/grSim
+#Install instructions
+You will need to build grSim from: https://github.com/mani-monaj/grSim
+Or grab the precompiled binairies from: https://github.com/roboime/grSim/downloads
+
+No other special dependencies required.
 
 Normally, the code is sent to real live robots, but for testing purposes grSim is used to simulate how the robots would behave.
 
