@@ -241,20 +241,32 @@ class AposAI(threading.Thread):
                 angle = angle
             elif fakeOri == 9:
                 ballDist = computeDistance(bX, bY, pX, pY) - 100
-                feather = 500
+                feather = 700
+                featherMin = 100
 
                 fromAngle = angle
                 goalAngle = math.atan2((goalY - pY), (goalX - pX))
+                diff = 0
+                if (angle - goalAngle) % (math.pi * 2) < (goalAngle - angle) % (math.pi * 2):
+                    diff = -((angle - goalAngle) % (math.pi * 2))
+                else:
+                    diff = ((goalAngle - angle) % (math.pi * 2))
 
                 print ("Dist: {}".format(ballDist))
-                if ballDist <= 100:
+                if ballDist <= featherMin:
+                    print ("\tFinal")
                     aimAngle = angle + ida(goalAngle)
                     angle = goalAngle
                 elif ballDist <= feather:
-                    featherAngle = ((goalAngle * (feather - ballDist) + fromAngle * ballDist) / (feather))
-                    aimAngle = angle + ida((goalAngle * (feather - ballDist) + fromAngle * ballDist) / (feather))
+                    #TODO: My sure to rotate towards the cloest angle.
+                    print ("\tMid")
+                    #This is a weighted average.
+                    #featherAngle = ((goalAngle * (feather - ballDist + featherMin) + fromAngle * (ballDist + featherMin)) / (feather + featherMin * 2)) % (math.pi * 2)
+                    featherAngle = (fromAngle + (diff * ((feather - ballDist - featherMin) / (feather - featherMin))))
+                    aimAngle = angle + ida(featherAngle)
                     angle = featherAngle
                 else:
+                    print ("\tFar")
                     aimAngle = - wc.teams[0][0].orientation
                     angle = angle
             elif fakeOri == 10:
