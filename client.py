@@ -248,9 +248,11 @@ class AposAI(threading.Thread):
                 goalAngle = math.atan2((goalY - pY), (goalX - pX))
                 diff = 0
                 if (angle - goalAngle) % (math.pi * 2) < (goalAngle - angle) % (math.pi * 2):
-                    diff = -((angle - goalAngle) % (math.pi * 2))
+                    #diff = -((angle - goalAngle) % (math.pi * 2))
+                    diff = - wc.teams[0][0].orientation + 1
                 else:
-                    diff = ((goalAngle - angle) % (math.pi * 2))
+                    #diff = ((goalAngle - angle) % (math.pi * 2))
+                    diff = - wc.teams[0][0].orientation - 1
 
                 print ("Dist: {}".format(ballDist))
                 if ballDist <= featherMin:
@@ -263,8 +265,9 @@ class AposAI(threading.Thread):
                     #This is a weighted average.
                     #featherAngle = ((goalAngle * (feather - ballDist + featherMin) + fromAngle * (ballDist + featherMin)) / (feather + featherMin * 2)) % (math.pi * 2)
                     featherAngle = (fromAngle + (diff * ((feather - ballDist - featherMin) / (feather - featherMin))))
-                    aimAngle = angle + ida(featherAngle)
-                    angle = featherAngle
+                    #aimAngle = angle + ida(featherAngle)
+                    aimAngle = diff
+                    angle = angle
                 else:
                     print ("\tFar")
                     aimAngle = - wc.teams[0][0].orientation
@@ -322,7 +325,7 @@ class AposAI(threading.Thread):
 
             udpsocket.sendto(packet.SerializeToString(), (SEND_ADDR, SEND_PORT))
 
-            time.sleep(0.01)
+            time.sleep(0.02)
 
             pass
 
