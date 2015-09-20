@@ -147,6 +147,10 @@ def rotatePoint(x1, y1, x2, y2, angle):
 
     return (x1, y1)
 
+#Inverts the rotation and doubles an angle.
+def ida(angle):
+    return (math.pi * 2 - angle) * 2
+
 class AposAI(threading.Thread):
     def __init__(self, name):
         threading.Thread.__init__(self)
@@ -204,16 +208,18 @@ class AposAI(threading.Thread):
                 aimAngle = - wc.teams[0][0].orientation
                 angle = angle
             elif fakeOri == 1:
-                aimAngle = angle
+                aimAngle = angle + ida(0)
                 angle = 0
+                #aimAngle = angle + math.pi / 2
+                #angle = math.pi + math.pi / 2 + math.pi / 4
             elif fakeOri == 2:
-                aimAngle = angle + math.pi
+                aimAngle = angle + ida(math.pi + math.pi / 2)
                 angle = math.pi + math.pi / 2
             elif fakeOri == 3:
-                aimAngle = angle
+                aimAngle = angle + ida(math.pi)
                 angle = math.pi
             elif fakeOri == 4:
-                aimAngle = angle + math.pi
+                aimAngle = angle + ida(math.pi / 2)
                 angle = math.pi / 2
             elif fakeOri == 5:
                 aimAngle = - wc.teams[0][0].orientation + math.pi / 2
@@ -225,17 +231,32 @@ class AposAI(threading.Thread):
                 #You can adjust the factor. Lower means
                 #that it will go towards the destination
                 #using a smaller arc
-                aimAngle = - wc.teams[0][0].orientation + 1
+                aimAngle = - wc.teams[0][0].orientation + 0.5
                 angle = angle
-            elif fakeOri == 8:
+            elif fakeOri == 8:    
                 #You can adjust the factor. Lower means
                 #that it will go towards the destination
                 #using a smaller arc
-                aimAngle = - wc.teams[0][0].orientation - 1
+                aimAngle = - wc.teams[0][0].orientation - 0.5
                 angle = angle
             elif fakeOri == 9:
-                aimAngle = - wc.teams[0][0].orientation
-                angle = math.atan2((goalY - pY), (goalX - pX))
+                ballDist = computeDistance(bX, bY, pX, pY) - 100
+                feather = 500
+
+                fromAngle = angle
+                goalAngle = math.atan2((goalY - pY), (goalX - pX))
+
+                print ("Dist: {}".format(ballDist))
+                if ballDist <= 100:
+                    aimAngle = angle + ida(goalAngle)
+                    angle = goalAngle
+                elif ballDist <= feather:
+                    featherAngle = ((goalAngle * (feather - ballDist) + fromAngle * ballDist) / (feather))
+                    aimAngle = angle + ida((goalAngle * (feather - ballDist) + fromAngle * ballDist) / (feather))
+                    angle = featherAngle
+                else:
+                    aimAngle = - wc.teams[0][0].orientation
+                    angle = angle
             elif fakeOri == 10:
                 aimAngle = - wc.teams[0][0].orientation
                 angle = angle
@@ -259,11 +280,11 @@ class AposAI(threading.Thread):
             #offsetX = bY - (bY - tempD)
 
             if fakeOri != 10:
-                command.velnormal = 0.5 / ratioY
-                command.veltangent = 0.5 / ratioX
+                command.velnormal = 1 / ratioY
+                command.veltangent = 1 / ratioX
             else:
-                command.velnormal = -0.5 / ratioY
-                command.veltangent = -0.5 / ratioX
+                command.velnormal = -1 / ratioY
+                command.veltangent = -1 / ratioX
 
             #angle = 0
 
