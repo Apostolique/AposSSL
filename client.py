@@ -147,9 +147,65 @@ def rotatePoint(x1, y1, x2, y2, angle):
 
     return (x1, y1)
 
+#x1, y1: location of current destination
+#x2, y2: direction to be looking at when at destination
+#x3, y3: current position
+def fetchAndRotate(x1, y1, x2, y2, x3, y3):
+    destDist = computeDistance(x1, y1, x3, y3) - 100
+    feather = 300
+    angle = 0
+
+    fromAngle = math.atan2((y1 - y3), (x1 - x3))
+    goalAngle = math.atan2((y2 - y3), (x2 - x3))
+    if (fromAngle - goalAngle) % (math.pi * 2) < (goalAngle - fromAngle) % (math.pi * 2):
+        angleT = (fromAngle - goalAngle) % (math.pi * 2)
+        diff = - wc.teams[0][0].orientation + math.pi / 2
+    else:
+        angleT = (goalAngle - fromAngle) % (math.pi * 2)
+        diff = - wc.teams[0][0].orientation - math.pi / 2
+
+    print ("math: {}".format((angleT)))
+    if angleT <= math.pi / 5 and destDist <= feather:
+        print ("\tFinal")
+        aimAngle = fromAngle + ida(goalAngle)
+        angle = goalAngle
+    elif destDist <= feather:
+        #TODO: Make sure to rotate towards the cloest angle.
+        print ("\tMid")
+        aimAngle = diff
+        angle = fromAngle
+        #aimAngle = diff
+        #angle = fromAngle
+    else:
+        print ("\tFar")
+        aimAngle = - wc.teams[0][0].orientation
+        angle = fromAngle
+    return (angle, aimAngle)
+
+def resetCommand(command, i_id):
+    command.id = i_id
+
+    command.wheelsspeed = False
+    command.wheel1 = 0
+    command.wheel2 = 0
+    command.wheel3 = 0
+    command.wheel4 = 0
+    command.veltangent = 0 #positive -> Go forward
+    command.velnormal = 0 #positive -> Go left side
+    command.velangular = 0 #Rotate by angle
+
+    command.kickspeedx = 0
+    command.kickspeedz = 0
+    command.spinner = False
+
 #Inverts the rotation and doubles an angle.
 def ida(angle):
     return (math.pi * 2 - angle) * 2
+
+#angle: The angle to face towards to.
+#currentOri: The current orientation.
+def getAngleDiff(angle1, angle2):
+    return ((math.pi + (angle1 - angle2)) % (math.pi * 2)) - math.pi
 
 class AposAI(threading.Thread):
     def __init__(self, name):
@@ -165,37 +221,31 @@ class AposAI(threading.Thread):
         global udpsocket
         global shoot
 
+        commandList = []
+
         packet = grSim_Packet()
         packet.commands.isteamyellow = True
         packet.commands.timestamp = 0.0
-        command = packet.commands.robot_commands.add()
-        command.id = 0
-
-        command.wheelsspeed = False
-        command.wheel1 = 0
-        command.wheel2 = 0
-        command.wheel3 = 0
-        command.wheel4 = 0
-        command.veltangent = 0 #positive -> Go forward
-        command.velnormal = 0 #positive -> Go left side
-        command.velangular = 0 #Rotate by angle
-
-        command.kickspeedz = 0
-        command.spinner = False
+        commandList.append(packet.commands.robot_commands.add())
+        commandList.append(packet.commands.robot_commands.add())
+        resetCommand(commandList[0], 0)
+        resetCommand(commandList[1], 1)
 
         while playAll and len(wc.teams) == 0:
             pass
 
         while playAll:
-            goalX = -3100
-            goalY = 0
+            #goalX = -3100
+            #goalY = 0
+            goalX = wc.teams[0][1].x
+            goalY = wc.teams[0][1].y
 
             if not shoot:
-                command.kickspeedx = 0
+                commandList[0].kickspeedx = 0
                 bX = wc.ball.x
                 bY = wc.ball.y
             else:
-                command.kickspeedx = 10
+                commandList[0].kickspeedx = 5
                 bX = goalX
                 bY = goalY
                 shoot = False
@@ -204,6 +254,7 @@ class AposAI(threading.Thread):
             pY = wc.teams[0][0].y
 
             angle = math.atan2((bY - pY), (bX - pX))
+            angle2 = math.atan2((bY - wc.teams[0][1].y), (bX - wc.teams[0][1].x))
             if fakeOri == 0:
                 aimAngle = - wc.teams[0][0].orientation
                 angle = angle
@@ -240,38 +291,7 @@ class AposAI(threading.Thread):
                 aimAngle = - wc.teams[0][0].orientation - 0.5
                 angle = angle
             elif fakeOri == 9:
-                ballDist = computeDistance(bX, bY, pX, pY) - 100
-                feather = 700
-                featherMin = 100
-
-                fromAngle = angle
-                goalAngle = math.atan2((goalY - pY), (goalX - pX))
-                diff = 0
-                if (angle - goalAngle) % (math.pi * 2) < (goalAngle - angle) % (math.pi * 2):
-                    #diff = -((angle - goalAngle) % (math.pi * 2))
-                    diff = - wc.teams[0][0].orientation + 1
-                else:
-                    #diff = ((goalAngle - angle) % (math.pi * 2))
-                    diff = - wc.teams[0][0].orientation - 1
-
-                print ("Dist: {}".format(ballDist))
-                if ballDist <= featherMin:
-                    print ("\tFinal")
-                    aimAngle = angle + ida(goalAngle)
-                    angle = goalAngle
-                elif ballDist <= feather:
-                    #TODO: My sure to rotate towards the cloest angle.
-                    print ("\tMid")
-                    #This is a weighted average.
-                    #featherAngle = ((goalAngle * (feather - ballDist + featherMin) + fromAngle * (ballDist + featherMin)) / (feather + featherMin * 2)) % (math.pi * 2)
-                    featherAngle = (fromAngle + (diff * ((feather - ballDist - featherMin) / (feather - featherMin))))
-                    #aimAngle = angle + ida(featherAngle)
-                    aimAngle = diff
-                    angle = angle
-                else:
-                    print ("\tFar")
-                    aimAngle = - wc.teams[0][0].orientation
-                    angle = angle
+                angle, aimAngle = fetchAndRotate(bX, bY, goalX, goalY, pX, pY)
             elif fakeOri == 10:
                 aimAngle = - wc.teams[0][0].orientation
                 angle = angle
@@ -295,17 +315,21 @@ class AposAI(threading.Thread):
             #offsetX = bY - (bY - tempD)
 
             if fakeOri != 10:
-                command.velnormal = 1 / ratioY
-                command.veltangent = 1 / ratioX
+                commandList[0].velnormal = 1 / ratioY
+                commandList[0].veltangent = 1 / ratioX
             else:
-                command.velnormal = -1 / ratioY
-                command.veltangent = -1 / ratioX
+                commandList[0].velnormal = -1 / ratioY
+                commandList[0].veltangent = -1 / ratioX
 
             #angle = 0
 
-            angleDiff = ((math.pi + (angle - wc.teams[0][0].orientation)) % (math.pi * 2)) - math.pi
+            angleDiff = getAngleDiff(angle, wc.teams[0][0].orientation)
 
-            command.velangular = angleDiff * 10
+
+            angleDiff2 = getAngleDiff(angle2, wc.teams[0][1].orientation)
+
+            commandList[0].velangular = angleDiff * 10
+            commandList[1].velangular = angleDiff2 * 10
 
             print ("Mode: {}".format(fakeOri))
             print ("Angle: {}".format(angle))
