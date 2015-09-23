@@ -945,7 +945,7 @@ def _AddIsInitializedMethod(message_descriptor, cls):
           name = field.name
 
         if field.label == _FieldDescriptor.LABEL_REPEATED:
-          for i in xrange(len(value)):
+          for i in range(len(value)):
             element = value[i]
             prefix = "%s[%d]." % (name, i)
             sub_errors = element.FindInitializationErrors()

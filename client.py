@@ -1,11 +1,12 @@
 #Couple cool and very useful imports.
 
-import sys
+import sys, random
 import socket
 import struct
 import threading
 import time
 import math
+from PyQt4 import QtGui, QtCore
 
 import proto.messages_robocup_ssl_wrapper_pb2 as wrapper
 from proto.grSim_Packet_pb2 import grSim_Packet
@@ -65,13 +66,18 @@ class WorldClass:
     def __init__(self):
         self.ball = None
         self.teams = []
+        self.geo = None
 
 wc = WorldClass()
 
-class RecvVision(threading.Thread):
-    def __init__(self, name):
+class RecvVision(QtCore.QThread):
+    updated = QtCore.pyqtSignal()
+
+    name = "recv"
+
+    """def __init__(self, name):
         threading.Thread.__init__(self)
-        self.name = name
+        self.name = name"""
 
     def run(self):
         print ("Starting " + self.name)
@@ -80,6 +86,7 @@ class RecvVision(threading.Thread):
 
     def recvData(self):
         global wc
+
         wp = wrapper.SSL_WrapperPacket()
 
         while playAll:
@@ -122,8 +129,10 @@ class RecvVision(threading.Thread):
             pass
           if wp.geometry.IsInitialized():
             debugP (wp.geometry)
+            wc.geo = wp.geometry
             pass
           debugP ("************")
+          self.updated.emit()
 
 def computeDistance(x1, y1, x2, y2):
     xdis = x1 - x2
@@ -131,6 +140,36 @@ def computeDistance(x1, y1, x2, y2):
     distance = math.sqrt(xdis * xdis + ydis * ydis)
 
     return distance
+
+def slopeFromAngle(angle):
+    if angle == math.pi + math.pi / 2:
+        angle += 0.01
+    else:
+        angle -= 0.01
+
+    return math.tan(angle - math.pi)
+
+def pointsOnLine(slope, x, y, distance):
+    b = y - slope * x
+    r = math.sqrt(1 + slope * slope)
+
+    newX1 = (x + (distance / r))
+    newY1 = (y + ((distance * slope) / r))
+
+    newX2 = (x + ((-distance) / r))
+    newY2 = (y + (((-distance) * slope) / r))
+
+    return ((newX1, newY1), (newX2, newY2))
+
+def followAngle(angle, x, y, distance):
+    slope = slopeFromAngle(angle)
+    coord1, coord2 = pointsOnLine(slope, x, y, distance)
+
+    side = (angle - math.pi / 2) % (math.pi * 2)
+    if (side < math.pi):
+        return coord2
+    else:
+        return coord1
 
 def rotatePoint(x1, y1, x2, y2, angle):
     s = math.sin(angle)
@@ -152,35 +191,53 @@ def rotatePoint(x1, y1, x2, y2, angle):
 #x3, y3: current position
 def fetchAndRotate(x1, y1, x2, y2, x3, y3):
     destDist = computeDistance(x1, y1, x3, y3) - 100
-    feather = 300
+    feather = 200
     angle = 0
 
-    fromAngle = math.atan2((y1 - y3), (x1 - x3))
     goalAngle = math.atan2((y2 - y3), (x2 - x3))
-    if (fromAngle - goalAngle) % (math.pi * 2) < (goalAngle - fromAngle) % (math.pi * 2):
-        angleT = (fromAngle - goalAngle) % (math.pi * 2)
-        diff = - wc.teams[0][0].orientation + math.pi / 2
-    else:
-        angleT = (goalAngle - fromAngle) % (math.pi * 2)
-        diff = - wc.teams[0][0].orientation - math.pi / 2
+    x4, y4 = followAngle(goalAngle, x1, y1, - feather)
 
-    print ("math: {}".format((angleT)))
-    if angleT <= math.pi / 5 and destDist <= feather:
+    destX = x1
+    destY = y1
+
+    fromAngle = math.atan2((y4 - y3), (x4 - x3))
+    finalAngle = math.atan2((y1 - y3), (x1 - x3))
+
+    if (finalAngle - goalAngle) % (math.pi * 2) < (goalAngle - finalAngle) % (math.pi * 2):
+        angleT = (finalAngle - goalAngle) % (math.pi * 2)
+        diff = - wc.teams[0][0].orientation + math.pi / 2
+        bounded = 0.5
+    else:
+        angleT = (goalAngle - finalAngle) % (math.pi * 2)
+        diff = - wc.teams[0][0].orientation - math.pi / 2
+        bounded = -0.5
+
+    print ("Dest: {}".format(((destDist % 10) - 5) / 10))
+    if angleT <= math.pi / 5:# and destDist <= feather:
         print ("\tFinal")
-        aimAngle = fromAngle + ida(goalAngle)
+        aimAngle = finalAngle + ida(goalAngle)
         angle = goalAngle
+
+        destX = x1
+        destY = y1
     elif destDist <= feather:
         #TODO: Make sure to rotate towards the cloest angle.
         print ("\tMid")
         aimAngle = diff
-        angle = fromAngle
+        angle = finalAngle
         #aimAngle = diff
         #angle = fromAngle
+        
+        destX = x1
+        destY = y1
     else:
-        print ("\tFar")
-        aimAngle = - wc.teams[0][0].orientation
-        angle = fromAngle
-    return (angle, aimAngle)
+        print ("\tFar {}".format(bounded))
+        aimAngle = - wc.teams[0][0].orientation + bounded
+        angle = finalAngle# + math.sin(destDist)
+
+        destX = x4
+        destY = y4
+    return (destX, destY, angle, aimAngle)
 
 def resetCommand(command, i_id):
     command.id = i_id
@@ -291,7 +348,7 @@ class AposAI(threading.Thread):
                 aimAngle = - wc.teams[0][0].orientation - 0.5
                 angle = angle
             elif fakeOri == 9:
-                angle, aimAngle = fetchAndRotate(bX, bY, goalX, goalY, pX, pY)
+                bX, bY, angle, aimAngle = fetchAndRotate(bX, bY, goalX, goalY, pX, pY)
             elif fakeOri == 10:
                 aimAngle = - wc.teams[0][0].orientation
                 angle = angle
@@ -353,39 +410,130 @@ class AposAI(threading.Thread):
 
             pass
 
-thread1 = RecvVision("recv")
+class InputCommands(threading.Thread):
+    def __init__(self, name):
+        threading.Thread.__init__(self)
+        self.name = name
+
+    def run(self):
+        print ("Starting " + self.name)
+        self.getCommands()
+        print ("Done with " + self.name)
+
+    def getCommands(self):
+        global playAll
+        global fakeOri
+        txtInput = ""
+        while txtInput is not "q":
+            txtInput = input()
+            if txtInput is "s":
+                shoot = True
+            elif txtInput is "0":
+                fakeOri = 0
+            elif txtInput is "1":
+                fakeOri = 1
+            elif txtInput is "2":
+                fakeOri = 2
+            elif txtInput is "3":
+                fakeOri = 3
+            elif txtInput is "4":
+                fakeOri = 4
+            elif txtInput is "5":
+                fakeOri = 5
+            elif txtInput is "6":
+                fakeOri = 6
+            elif txtInput is "7":
+                fakeOri = 7
+            elif txtInput is "8":
+                fakeOri = 8
+            elif txtInput is "9":
+                fakeOri = 9
+            elif txtInput is "r":
+                fakeOri = 10
+
+        playAll = False
+
+class FieldDisplay(QtGui.QWidget):
+    def __init__(self):
+        super(FieldDisplay, self).__init__()
+        
+        self._thread = RecvVision(self)
+        self._thread.updated.connect(self.refresh)
+
+        self._thread.start()
+
+        self.initUI()
+        
+    def initUI(self):      
+        self.setGeometry(300, 300, 1220, 820)
+        self.setWindowTitle('SSL Visualizer')
+        self.show()
+
+    def paintEvent(self, e):
+        qp = QtGui.QPainter()
+        qp.begin(self)
+
+        self.drawField(qp)
+        qp.end()
+
+    def drawField(self, qp):
+
+        pen = QtGui.QPen(QtGui.QColor(0, 0, 0), 3, QtCore.Qt.SolidLine)
+
+        if (wc.geo is not None):
+            color = QtGui.QColor(0, 0, 0)
+            color.setNamedColor('#d4d4d4')
+            qp.setPen(pen)
+
+            width = wc.geo.field.field_width
+            height = wc.geo.field.goal_width
+
+            qp.setBrush(QtGui.QColor(0, 155, 0, 200))
+            qp.drawRect(10, 10, width / 5, height / 5)
+
+            for i in wc.teams[0]:
+                centerX = (i.x + width / 2) / 5 + 10
+                centerY = (-i.y + height / 2) / 5 + 10
+                qp.setBrush(QtGui.QColor(255, 255, 0, 200))
+                qp.drawEllipse(centerX - 10, centerY - 10, 20, 20)
+                x2, y2 = followAngle(-i.orientation, centerX , centerY, 20)
+                qp.drawLine(centerX, centerY, x2, y2)
+
+            for i in wc.teams[1]:
+                centerX = (i.x + width / 2) / 5 + 10
+                centerY = (-i.y + height / 2) / 5 + 10
+                qp.setBrush(QtGui.QColor(0, 0, 255, 200))
+                qp.drawEllipse(centerX - 10, centerY - 10, 20, 20)
+                x2, y2 = followAngle(-i.orientation, centerX , centerY, 20)
+                qp.drawLine(centerX, centerY, x2, y2)
+
+            qp.setBrush(QtGui.QColor(255, 69, 0, 200))
+            qp.drawEllipse((wc.ball.x + width / 2) / 5 - 5, (-wc.ball.y + height / 2) / 5 - 5, 10, 10)
+
+
+    def drawPoints(self, qp):
+        qp.setPen(QtCore.Qt.red)
+        size = self.size()
+        
+        for i in range(1000):
+            x = random.randint(1, size.width()-1)
+            y = random.randint(1, size.height()-1)
+            qp.drawPoint(x, y)
+
+    def refresh(self):
+        self.update()
+
+#thread1 = RecvVision("recv")
 thread2 = AposAI("send")
-thread1.start()
+thread3 = InputCommands("input")
+#thread1.start()
 thread2.start()
+thread3.start()
 
-txtInput = ""
-while txtInput is not "q":
-    txtInput = input()
-    if txtInput is "s":
-        shoot = True
-    elif txtInput is "0":
-        fakeOri = 0
-    elif txtInput is "1":
-        fakeOri = 1
-    elif txtInput is "2":
-        fakeOri = 2
-    elif txtInput is "3":
-        fakeOri = 3
-    elif txtInput is "4":
-        fakeOri = 4
-    elif txtInput is "5":
-        fakeOri = 5
-    elif txtInput is "6":
-        fakeOri = 6
-    elif txtInput is "7":
-        fakeOri = 7
-    elif txtInput is "8":
-        fakeOri = 8
-    elif txtInput is "9":
-        fakeOri = 9
-    elif txtInput is "r":
-        fakeOri = 10
+if __name__ == '__main__':
+    app = QtGui.QApplication(sys.argv)
+    ex = FieldDisplay()
+    sys.exit(app.exec_())
 
-playAll = False
 
 print ("I had a good life. This is it though.")
