@@ -144,7 +144,7 @@ def computeDistance(x1, y1, x2, y2):
 def slopeFromAngle(angle):
     if angle == math.pi + math.pi / 2:
         angle += 0.01
-    else:
+    elif angle == math.pi / 2:
         angle -= 0.01
 
     return math.tan(angle - math.pi)
@@ -480,6 +480,9 @@ class FieldDisplay(QtGui.QWidget):
 
         pen = QtGui.QPen(QtGui.QColor(0, 0, 0), 3, QtCore.Qt.SolidLine)
 
+        fieldOffsetX = 10;
+        fieldOffsetY = 10;
+
         if (wc.geo is not None):
             color = QtGui.QColor(0, 0, 0)
             color.setNamedColor('#d4d4d4')
@@ -495,20 +498,20 @@ class FieldDisplay(QtGui.QWidget):
                 centerX = (i.x + width / 2) / 5 + 10
                 centerY = (-i.y + height / 2) / 5 + 10
                 qp.setBrush(QtGui.QColor(255, 255, 0, 200))
-                qp.drawEllipse(centerX - 10, centerY - 10, 20, 20)
-                x2, y2 = followAngle(-i.orientation, centerX , centerY, 20)
+                qp.drawEllipse(centerX - 20, centerY - 20, 40, 40)
+                x2, y2 = followAngle(-i.orientation, centerX, centerY, 40)
                 qp.drawLine(centerX, centerY, x2, y2)
 
             for i in wc.teams[1]:
                 centerX = (i.x + width / 2) / 5 + 10
                 centerY = (-i.y + height / 2) / 5 + 10
                 qp.setBrush(QtGui.QColor(0, 0, 255, 200))
-                qp.drawEllipse(centerX - 10, centerY - 10, 20, 20)
-                x2, y2 = followAngle(-i.orientation, centerX , centerY, 20)
+                qp.drawEllipse(centerX - 20, centerY - 20, 40, 40)
+                x2, y2 = followAngle(-i.orientation, centerX, centerY, 40)
                 qp.drawLine(centerX, centerY, x2, y2)
 
             qp.setBrush(QtGui.QColor(255, 69, 0, 200))
-            qp.drawEllipse((wc.ball.x + width / 2) / 5 - 5, (-wc.ball.y + height / 2) / 5 - 5, 10, 10)
+            qp.drawEllipse((wc.ball.x + width / 2) / 5 - 5 + fieldOffsetX, (-wc.ball.y + height / 2) / 5 - 5 + fieldOffsetY, 10, 10)
 
 
     def drawPoints(self, qp):
