@@ -542,13 +542,13 @@ class FieldDisplay(QtGui.QWidget):
             goalSize = 1000
             pen = QtGui.QPen(QtGui.QColor(255, 0, 0), 3, QtCore.Qt.SolidLine)
             qp.setPen(pen)
-            qp.drawLine(self.fieldOffsetX / self.ratio - 250 / self.ratio, self.fieldOffsetY / self.ratio - goalSize / 2 / self.ratio + height / 2, self.fieldOffsetX / self.ratio - 250 / self.ratio, self.fieldOffsetY / self.ratio + goalSize / 2 / self.ratio + height / 2)
-            qp.drawLine(self.fieldOffsetX / self.ratio - 250 / self.ratio, self.fieldOffsetY / self.ratio - goalSize / 2 / self.ratio + height / 2, self.fieldOffsetX / self.ratio, self.fieldOffsetY / self.ratio - goalSize / 2 / self.ratio + height / 2)
-            qp.drawLine(self.fieldOffsetX / self.ratio - 250 / self.ratio, self.fieldOffsetY / self.ratio + goalSize / 2 / self.ratio + height / 2, self.fieldOffsetX / self.ratio, self.fieldOffsetY / self.ratio + goalSize / 2 / self.ratio + height / 2)
+            qp.drawLine(self.fieldOffsetX / self.ratio - 180 / self.ratio, self.fieldOffsetY / self.ratio - goalSize / 2 / self.ratio + height / 2, self.fieldOffsetX / self.ratio - 180 / self.ratio, self.fieldOffsetY / self.ratio + goalSize / 2 / self.ratio + height / 2)
+            qp.drawLine(self.fieldOffsetX / self.ratio - 180 / self.ratio, self.fieldOffsetY / self.ratio - goalSize / 2 / self.ratio + height / 2, self.fieldOffsetX / self.ratio, self.fieldOffsetY / self.ratio - goalSize / 2 / self.ratio + height / 2)
+            qp.drawLine(self.fieldOffsetX / self.ratio - 180 / self.ratio, self.fieldOffsetY / self.ratio + goalSize / 2 / self.ratio + height / 2, self.fieldOffsetX / self.ratio, self.fieldOffsetY / self.ratio + goalSize / 2 / self.ratio + height / 2)
 
-            qp.drawLine(self.fieldOffsetX / self.ratio + 250 / self.ratio + width, self.fieldOffsetY / self.ratio - goalSize / 2 / self.ratio + height / 2, self.fieldOffsetX / self.ratio + 250 / self.ratio + width, self.fieldOffsetY / self.ratio + goalSize / 2 / self.ratio + height / 2)
-            qp.drawLine(self.fieldOffsetX / self.ratio + 250 / self.ratio + width, self.fieldOffsetY / self.ratio - goalSize / 2 / self.ratio + height / 2, self.fieldOffsetX / self.ratio + width, self.fieldOffsetY / self.ratio - goalSize / 2 / self.ratio + height / 2)
-            qp.drawLine(self.fieldOffsetX / self.ratio + 250 / self.ratio + width, self.fieldOffsetY / self.ratio + goalSize / 2 / self.ratio + height / 2, self.fieldOffsetX / self.ratio + width, self.fieldOffsetY / self.ratio + goalSize / 2 / self.ratio + height / 2)
+            qp.drawLine(self.fieldOffsetX / self.ratio + 180 / self.ratio + width, self.fieldOffsetY / self.ratio - goalSize / 2 / self.ratio + height / 2, self.fieldOffsetX / self.ratio + 180 / self.ratio + width, self.fieldOffsetY / self.ratio + goalSize / 2 / self.ratio + height / 2)
+            qp.drawLine(self.fieldOffsetX / self.ratio + 180 / self.ratio + width, self.fieldOffsetY / self.ratio - goalSize / 2 / self.ratio + height / 2, self.fieldOffsetX / self.ratio + width, self.fieldOffsetY / self.ratio - goalSize / 2 / self.ratio + height / 2)
+            qp.drawLine(self.fieldOffsetX / self.ratio + 180 / self.ratio + width, self.fieldOffsetY / self.ratio + goalSize / 2 / self.ratio + height / 2, self.fieldOffsetX / self.ratio + width, self.fieldOffsetY / self.ratio + goalSize / 2 / self.ratio + height / 2)
 
             pen = QtGui.QPen(QtGui.QColor(0, 0, 0), 3, QtCore.Qt.SolidLine)
             qp.setPen(pen)
