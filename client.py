@@ -212,9 +212,9 @@ def fetchAndRotate(x1, y1, x2, y2, x3, y3):
         diff = - wc.teams[0][0].orientation - math.pi / 2
         bounded = -0.5
 
-    print ("Dest: {}".format(((destDist % 10) - 5) / 10))
+    debugP ("Dest: {}".format(((destDist % 10) - 5) / 10))
     if angleT <= math.pi / 5:# and destDist <= feather:
-        print ("\tFinal")
+        debugP ("\tFinal")
         aimAngle = finalAngle + ida(goalAngle)
         angle = goalAngle
 
@@ -222,7 +222,7 @@ def fetchAndRotate(x1, y1, x2, y2, x3, y3):
         destY = y1
     elif destDist <= feather:
         #TODO: Make sure to rotate towards the cloest angle.
-        print ("\tMid")
+        debugP ("\tMid")
         aimAngle = diff
         angle = finalAngle
         #aimAngle = diff
@@ -231,7 +231,7 @@ def fetchAndRotate(x1, y1, x2, y2, x3, y3):
         destX = x1
         destY = y1
     else:
-        print ("\tFar {}".format(bounded))
+        debugP ("\tFar {}".format(bounded))
         aimAngle = - wc.teams[0][0].orientation + bounded
         angle = finalAngle# + math.sin(destDist)
 
@@ -388,21 +388,21 @@ class AposAI(threading.Thread):
             commandList[0].velangular = angleDiff * 10
             commandList[1].velangular = angleDiff2 * 10
 
-            print ("Mode: {}".format(fakeOri))
-            print ("Angle: {}".format(angle))
-            print ("Diff: {}".format(angleDiff))
-            print ("RatioX: {}".format(ratioX))
-            print ("RatioY: {}".format(ratioY))
+            debugP ("Mode: {}".format(fakeOri))
+            debugP ("Angle: {}".format(angle))
+            debugP ("Diff: {}".format(angleDiff))
+            debugP ("RatioX: {}".format(ratioX))
+            debugP ("RatioY: {}".format(ratioY))
 
-            print ("Ball at:")
-            print ("\tx: {}".format(wc.ball.x))
-            print ("\ty: {}".format(wc.ball.y))
-            print ("Robot 0 of {}:".format(len(wc.teams[0])))
-            print ("\tx: {}".format(wc.teams[0][0].x))
-            print ("\ty: {}".format(wc.teams[0][0].y))
-            print ("\tOri: {}".format(wc.teams[0][0].orientation))
+            debugP ("Ball at:")
+            debugP ("\tx: {}".format(wc.ball.x))
+            debugP ("\ty: {}".format(wc.ball.y))
+            debugP ("Robot 0 of {}:".format(len(wc.teams[0])))
+            debugP ("\tx: {}".format(wc.teams[0][0].x))
+            debugP ("\ty: {}".format(wc.teams[0][0].y))
+            debugP ("\tOri: {}".format(wc.teams[0][0].orientation))
 
-            print ("************")
+            debugP ("************")
 
             udpsocket.sendto(packet.SerializeToString(), (SEND_ADDR, SEND_PORT))
 
@@ -423,8 +423,9 @@ class InputCommands(threading.Thread):
     def getCommands(self):
         global playAll
         global fakeOri
+        global shoot
         txtInput = ""
-        while txtInput is not "q":
+        while txtInput is not "q" and playAll:
             txtInput = input()
             if txtInput is "s":
                 shoot = True
@@ -454,11 +455,17 @@ class InputCommands(threading.Thread):
         playAll = False
 
 class FieldDisplay(QtGui.QWidget):
+    #TODO: Make the gui be based on the current window size.
+
     def __init__(self):
         super(FieldDisplay, self).__init__()
         
         self._thread = RecvVision(self)
         self._thread.updated.connect(self.refresh)
+
+        self.ratio = 1.0
+        self.fieldOffsetX = 700
+        self.fieldOffsetY = 700
 
         self._thread.start()
 
@@ -466,8 +473,24 @@ class FieldDisplay(QtGui.QWidget):
         
     def initUI(self):      
         self.setGeometry(300, 300, 1220, 820)
+        self.ratio = (6000 + self.fieldOffsetY * 2) / 820
         self.setWindowTitle('SSL Visualizer')
         self.show()
+
+    def closeEvent(self, e):
+        global playAll
+        playAll = False
+
+    def resizeEvent(self, e):
+        if (wc.geo is not None):
+            print ("Current new size: {}, {}".format(e.size().width(), e.size().height()))
+            print ("Field size: {}, {}".format(wc.geo.field.field_width, wc.geo.field.boundary_width))
+            ratioX = ((wc.geo.field.field_width + self.fieldOffsetX * 2) / (e.size().width()))
+            ratioY = ((wc.geo.field.goal_width + self.fieldOffsetY * 2) / (e.size().height()))
+            print ("RatioX: {}".format(ratioX))
+            print ("RatioY: {}".format(ratioY))
+            self.ratio = max(ratioX, ratioY)
+            pass
 
     def paintEvent(self, e):
         qp = QtGui.QPainter()
@@ -480,38 +503,83 @@ class FieldDisplay(QtGui.QWidget):
 
         pen = QtGui.QPen(QtGui.QColor(0, 0, 0), 3, QtCore.Qt.SolidLine)
 
-        fieldOffsetX = 10;
-        fieldOffsetY = 10;
-
         if (wc.geo is not None):
             color = QtGui.QColor(0, 0, 0)
             color.setNamedColor('#d4d4d4')
             qp.setPen(pen)
 
-            width = wc.geo.field.field_width
-            height = wc.geo.field.goal_width
+            width = wc.geo.field.field_width / self.ratio
+            height = wc.geo.field.goal_width / self.ratio
 
+            qp.setBrush(QtGui.QColor(0, 155, 0, 150))
+            qp.drawRect(0, 0, width + self.fieldOffsetX * 2 / self.ratio, height + self.fieldOffsetY * 2 / self.ratio)
             qp.setBrush(QtGui.QColor(0, 155, 0, 200))
-            qp.drawRect(10, 10, width / 5, height / 5)
+            pen = QtGui.QPen(QtGui.QColor(0, 0, 0, 0), 3, QtCore.Qt.SolidLine)
+            qp.setPen(pen)
+            qp.drawRect(self.fieldOffsetX / self.ratio - 250 / self.ratio, self.fieldOffsetY / self.ratio - 250 / self.ratio, width + 500 / self.ratio, height + 500 / self.ratio)
+            pen = QtGui.QPen(QtGui.QColor(255, 255, 255), 3, QtCore.Qt.SolidLine)
+            qp.setPen(pen)
+            qp.drawRect(self.fieldOffsetX / self.ratio, self.fieldOffsetY / self.ratio, width, height)
 
+            pen = QtGui.QPen(QtGui.QColor(255, 255, 255), 3, QtCore.Qt.SolidLine)
+            qp.setPen(pen)
+            qp.drawLine(self.fieldOffsetX / self.ratio + width / 2, self.fieldOffsetY / self.ratio, self.fieldOffsetX / self.ratio + width / 2, self.fieldOffsetY / self.ratio + height)
+            qp.drawLine(self.fieldOffsetX / self.ratio, self.fieldOffsetY / self.ratio + height / 2, self.fieldOffsetX / self.ratio + width, self.fieldOffsetY / self.ratio + height / 2)
+            qp.setBrush(QtGui.QColor(255, 255, 255, 0))
+            circleSize = 500 / self.ratio
+            qp.drawEllipse(self.fieldOffsetX / self.ratio + width / 2 - circleSize, self.fieldOffsetY / self.ratio + height / 2 - circleSize, circleSize * 2, circleSize * 2)
+            #qp.drawEllipse(self.fieldOffsetX / self.ratio - circleSize * 2, self.fieldOffsetY / self.ratio + height / 2 - circleSize * 2 - 250 / self.ratio, circleSize * 4, circleSize * 4)
+            #qp.drawEllipse(self.fieldOffsetX / self.ratio - circleSize * 2, self.fieldOffsetY / self.ratio + height / 2 - circleSize * 2 + 250 / self.ratio, circleSize * 4, circleSize * 4)
+            qp.drawArc(self.fieldOffsetX / self.ratio - circleSize * 2, self.fieldOffsetY / self.ratio + height / 2 - circleSize * 2 - 250 / self.ratio, circleSize * 4, circleSize * 4, 0, 90 * 16)
+            qp.drawArc(self.fieldOffsetX / self.ratio - circleSize * 2, self.fieldOffsetY / self.ratio + height / 2 - circleSize * 2 + 250 / self.ratio, circleSize * 4, circleSize * 4, 0, -90 * 16)
+
+            qp.drawArc(self.fieldOffsetX / self.ratio + width - circleSize * 2, self.fieldOffsetY / self.ratio + height / 2 - circleSize * 2 - 250 / self.ratio, circleSize * 4, circleSize * 4, 180 * 16, -90 * 16)
+            qp.drawArc(self.fieldOffsetX / self.ratio + width - circleSize * 2, self.fieldOffsetY / self.ratio + height / 2 - circleSize * 2 + 250 / self.ratio, circleSize * 4, circleSize * 4, 180 * 16, 90 * 16)
+
+            qp.drawLine(self.fieldOffsetX / self.ratio + circleSize * 2, self.fieldOffsetY / self.ratio + height / 2 - 250 / self.ratio, self.fieldOffsetX / self.ratio + circleSize * 2, self.fieldOffsetY / self.ratio + height / 2 + 250 / self.ratio)
+            qp.drawLine(self.fieldOffsetX / self.ratio + width - circleSize * 2, self.fieldOffsetY / self.ratio + height / 2 - 250 / self.ratio, self.fieldOffsetX / self.ratio + width - circleSize * 2, self.fieldOffsetY / self.ratio + height / 2 + 250 / self.ratio)
+
+            goalSize = 1000
+            pen = QtGui.QPen(QtGui.QColor(255, 0, 0), 3, QtCore.Qt.SolidLine)
+            qp.setPen(pen)
+            qp.drawLine(self.fieldOffsetX / self.ratio - 250 / self.ratio, self.fieldOffsetY / self.ratio - goalSize / 2 / self.ratio + height / 2, self.fieldOffsetX / self.ratio - 250 / self.ratio, self.fieldOffsetY / self.ratio + goalSize / 2 / self.ratio + height / 2)
+            qp.drawLine(self.fieldOffsetX / self.ratio - 250 / self.ratio, self.fieldOffsetY / self.ratio - goalSize / 2 / self.ratio + height / 2, self.fieldOffsetX / self.ratio, self.fieldOffsetY / self.ratio - goalSize / 2 / self.ratio + height / 2)
+            qp.drawLine(self.fieldOffsetX / self.ratio - 250 / self.ratio, self.fieldOffsetY / self.ratio + goalSize / 2 / self.ratio + height / 2, self.fieldOffsetX / self.ratio, self.fieldOffsetY / self.ratio + goalSize / 2 / self.ratio + height / 2)
+
+            qp.drawLine(self.fieldOffsetX / self.ratio + 250 / self.ratio + width, self.fieldOffsetY / self.ratio - goalSize / 2 / self.ratio + height / 2, self.fieldOffsetX / self.ratio + 250 / self.ratio + width, self.fieldOffsetY / self.ratio + goalSize / 2 / self.ratio + height / 2)
+            qp.drawLine(self.fieldOffsetX / self.ratio + 250 / self.ratio + width, self.fieldOffsetY / self.ratio - goalSize / 2 / self.ratio + height / 2, self.fieldOffsetX / self.ratio + width, self.fieldOffsetY / self.ratio - goalSize / 2 / self.ratio + height / 2)
+            qp.drawLine(self.fieldOffsetX / self.ratio + 250 / self.ratio + width, self.fieldOffsetY / self.ratio + goalSize / 2 / self.ratio + height / 2, self.fieldOffsetX / self.ratio + width, self.fieldOffsetY / self.ratio + goalSize / 2 / self.ratio + height / 2)
+
+            pen = QtGui.QPen(QtGui.QColor(0, 0, 0), 3, QtCore.Qt.SolidLine)
+            qp.setPen(pen)
+
+            robotSize = 180 / self.ratio
             for i in wc.teams[0]:
-                centerX = (i.x + width / 2) / 5 + 10
-                centerY = (-i.y + height / 2) / 5 + 10
+                centerX = i.x / self.ratio + (self.fieldOffsetX / self.ratio + width / 2)
+                centerY = -i.y / self.ratio + (self.fieldOffsetY / self.ratio + height / 2)
+                qp.setBrush(QtGui.QColor(255, 255, 0, 0))
+                qp.drawEllipse(centerX - robotSize, centerY - robotSize, robotSize * 2, robotSize * 2)
                 qp.setBrush(QtGui.QColor(255, 255, 0, 200))
-                qp.drawEllipse(centerX - 20, centerY - 20, 40, 40)
-                x2, y2 = followAngle(-i.orientation, centerX, centerY, 40)
+                qp.drawEllipse(centerX - robotSize / 2, centerY - robotSize / 2, robotSize, robotSize)
+                x2, y2 = followAngle(-i.orientation, centerX, centerY, robotSize)
                 qp.drawLine(centerX, centerY, x2, y2)
 
             for i in wc.teams[1]:
-                centerX = (i.x + width / 2) / 5 + 10
-                centerY = (-i.y + height / 2) / 5 + 10
+                centerX = i.x / self.ratio + (self.fieldOffsetX / self.ratio + width / 2)
+                centerY = -i.y / self.ratio + (self.fieldOffsetY / self.ratio + height / 2)
+                qp.setBrush(QtGui.QColor(0, 0, 255, 0))
+                qp.drawEllipse(centerX - robotSize, centerY - robotSize, robotSize * 2, robotSize * 2)
                 qp.setBrush(QtGui.QColor(0, 0, 255, 200))
-                qp.drawEllipse(centerX - 20, centerY - 20, 40, 40)
-                x2, y2 = followAngle(-i.orientation, centerX, centerY, 40)
+                qp.drawEllipse(centerX - robotSize / 2, centerY - robotSize / 2, robotSize, robotSize)
+                x2, y2 = followAngle(-i.orientation, centerX, centerY, robotSize)
                 qp.drawLine(centerX, centerY, x2, y2)
 
             qp.setBrush(QtGui.QColor(255, 69, 0, 200))
-            qp.drawEllipse((wc.ball.x + width / 2) / 5 - 5 + fieldOffsetX, (-wc.ball.y + height / 2) / 5 - 5 + fieldOffsetY, 10, 10)
+            ballSize = 10
+            ballX = wc.ball.x / self.ratio + (self.fieldOffsetX / self.ratio + width / 2) #(wc.ball.x + width) / self.ratio
+            ballY = -wc.ball.y / self.ratio + (self.fieldOffsetY / self.ratio + height / 2) #(-wc.ball.y + height) / self.ratio
+            #print ("Ball x: {} and y: {}".format(ballX, ballY))
+            qp.drawEllipse(ballX - (ballSize / 2), ballY - (ballSize / 2), ballSize, ballSize)
 
 
     def drawPoints(self, qp):
