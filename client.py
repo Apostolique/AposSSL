@@ -472,8 +472,8 @@ class FieldDisplay(QtGui.QWidget):
         self.initUI()
         
     def initUI(self):      
-        self.setGeometry(300, 300, 1220, 820)
-        self.ratio = (6000 + self.fieldOffsetY * 2) / 820
+        self.setGeometry(200, 200, 1280, 720)
+        self.ratio = (6000 + self.fieldOffsetY * 2) / 720
         self.setWindowTitle('SSL Visualizer')
         self.show()
 
@@ -491,6 +491,32 @@ class FieldDisplay(QtGui.QWidget):
             print ("RatioY: {}".format(ratioY))
             self.ratio = max(ratioX, ratioY)
             pass
+
+    def mousePressEvent(self, e):
+        global udpsocket
+
+        packet = grSim_Packet()
+        packet.replacement.ball.x = e.x() * self.ratio / 1000 - 10400 / 1000 / 2
+        packet.replacement.ball.y = -e.y() * self.ratio / 1000 + 7400 / 1000 / 2
+        packet.replacement.ball.vx = 0
+        packet.replacement.ball.vy = 0
+
+        print ("Clicked! {}, {}".format(packet.replacement.ball.x, packet.replacement.ball.y))
+
+        udpsocket.sendto(packet.SerializeToString(), (SEND_ADDR, SEND_PORT))
+
+    def mouseMoveEvent(self, e):
+        global udpsocket
+
+        packet = grSim_Packet()
+        packet.replacement.ball.x = e.x() * self.ratio / 1000 - 10400 / 1000 / 2
+        packet.replacement.ball.y = -e.y() * self.ratio / 1000 + 7400 / 1000 / 2
+        packet.replacement.ball.vx = 0
+        packet.replacement.ball.vy = 0
+
+        print ("Clicked! {}, {}".format(packet.replacement.ball.x, packet.replacement.ball.y))
+
+        udpsocket.sendto(packet.SerializeToString(), (SEND_ADDR, SEND_PORT))
 
     def paintEvent(self, e):
         qp = QtGui.QPainter()
